@@ -1,4 +1,4 @@
-name: "Terraform zero to hero"
+name: "Terraform CI/CD Pipeline"
 
 on:
   push:
@@ -9,17 +9,20 @@ on:
         description: 'Terraform Action (apply/destroy)'
         required: true
         type: choice
-        options: [Terraform_apply_command, Terraform_destroy_command]
+        options: [apply, destroy]
+
+env:
+  TF_DIR: ./Terraform  # Define Terraform directory path
 
 jobs:
-  terraform_auto_apply:
-    name: "Auto Apply on Push"
+  terraform_validate:
+    name: "Validate & Plan"
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
     environment: production
 
     steps:
-      - name: Checkout Code
+      - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Setup Terraform
@@ -29,21 +32,25 @@ jobs:
 
       - name: Terraform Init
         run: terraform init
+        working-directory: ${{ env.TF_DIR }}
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_KEY }}
+
+      - name: Terraform Validate
+        run: terraform validate
+        working-directory: ${{ env.TF_DIR }}
 
       - name: Terraform Plan
         run: terraform plan -input=false
-
-      - name: Terraform Apply
-        run: terraform apply -auto-approve -input=false
+        working-directory: ${{ env.TF_DIR }}
 
   terraform_apply:
-    name: "Manual Apply"
-    if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'Terraform_apply_command' }}
+    name: "Apply Changes"
+    if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'apply' }}
     runs-on: ubuntu-latest
     environment: production
+    needs: terraform_validate
 
     steps:
       - uses: actions/checkout@v4
@@ -51,17 +58,19 @@ jobs:
       - uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: 1.5.7
-      
+
       - run: terraform init
+        working-directory: ${{ env.TF_DIR }}
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_KEY }}
-      
+
       - run: terraform apply -auto-approve -input=false
+        working-directory: ${{ env.TF_DIR }}
 
   terraform_destroy:
-    name: "Manual Destroy"
-    if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'Terraform_destroy_command' }}
+    name: "Destroy Infrastructure"
+    if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'destroy' }}
     runs-on: ubuntu-latest
     environment: production
 
@@ -71,10 +80,12 @@ jobs:
       - uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: 1.5.7
-      
+
       - run: terraform init
+        working-directory: ${{ env.TF_DIR }}
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_KEY }}
-      
+
       - run: terraform destroy -auto-approve -input=false
+        working-directory: ${{ env.TF_DIR }}
