@@ -61,10 +61,10 @@ resource "aws_security_group" "allow_ssh_http" {
 
 # EC2 Instance
 resource "aws_instance" "my_ec2" {
-  ami           = "ami-0c7217cdde317cfec" # Amazon Linux 2 (for us-east-1)
-  instance_type = "t2.micro"
-  subnet_id     = aws_subnet.main_subnet.id
-  key_name      = "my-new-keypair"
+  ami                         = "ami-0c7217cdde317cfec" # Amazon Linux 2 (for us-east-1)
+  instance_type               = "t2.micro"
+  subnet_id                   = aws_subnet.main_subnet.id
+  key_name                    = "my-new-keypair"
   associate_public_ip_address = true
   vpc_security_group_ids      = [aws_security_group.allow_ssh_http.id]
 
