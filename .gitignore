@@ -1,4 +1,4 @@
-Terraform/.terraform/
-Terraform/terraform.tfstate
-Terraform/terraform.tfstate.backup
-Terraform/.terraform.lock.hcl
+echo ".terraform/" >> .gitignore
+echo "*.tfstate" >> .gitignore
+echo "*.tfstate.backup" >> .gitignore
+echo "terraform.tfvars" >> .gitignore
