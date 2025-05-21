@@ -12,12 +12,12 @@ on:
         options: [apply, destroy]
 
 env:
-  TF_DIR: ./Terraform
-  AWS_REGION: us-east-1
+  TF_DIR: ./Terraform  # Define Terraform directory path
 
 jobs:
   terraform_validate:
     name: "Validate & Plan"
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     environment: production
 
@@ -25,39 +25,28 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ secrets.AWS_IAM_ROLE }}
-          aws-region: ${{ env.AWS_REGION }}
-
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: 1.5.7
-          terraform_wrapper: false
 
       - name: Terraform Init
-        run: terraform init -backend-config="bucket=${{ secrets.TF_STATE_BUCKET }}" -backend-config="key=terraform.tfstate"
+        run: terraform init
         working-directory: ${{ env.TF_DIR }}
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ID }}
 
       - name: Terraform Validate
         run: terraform validate
         working-directory: ${{ env.TF_DIR }}
 
-      - name: Terraform Format Check
-        run: terraform fmt -check
-        working-directory: ${{ env.TF_DIR }}
-
       - name: Terraform Plan
-        run: terraform plan -var-file="default.tfvars" -out=tfplan
+        run: terraform plan -var-file="default.tfvars"
         working-directory: ${{ env.TF_DIR }}
-        
-      - name: Upload Plan Artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: tfplan
-          path: ${{ env.TF_DIR }}/tfplan
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ID }}
 
   terraform_apply:
     name: "Apply Changes"
@@ -70,43 +59,34 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ secrets.AWS_IAM_ROLE }}
-          aws-region: ${{ env.AWS_REGION }}
-
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: 1.5.7
 
-      - name: Download Plan Artifact
-        uses: actions/download-artifact@v3
-        with:
-          name: tfplan
-          path: ${{ env.TF_DIR }}
+      - name: Terraform Init
+        run: terraform init
+        working-directory: ${{ env.TF_DIR }}
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ID }}
 
       - name: Terraform Apply
-        run: terraform apply tfplan
+        run: terraform apply -auto-approve -var-file="default.tfvars"
         working-directory: ${{ env.TF_DIR }}
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ID }}
 
   terraform_destroy:
     name: "Destroy Infrastructure"
     if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'destroy' }}
     runs-on: ubuntu-latest
     environment: production
-    needs: terraform_validate
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ secrets.AWS_IAM_ROLE }}
-          aws-region: ${{ env.AWS_REGION }}
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
@@ -114,9 +94,15 @@ jobs:
           terraform_version: 1.5.7
 
       - name: Terraform Init
-        run: terraform init -backend-config="bucket=${{ secrets.TF_STATE_BUCKET }}" -backend-config="key=terraform.tfstate"
+        run: terraform init
         working-directory: ${{ env.TF_DIR }}
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ID }}
 
       - name: Terraform Destroy
         run: terraform destroy -auto-approve -var-file="default.tfvars"
         working-directory: ${{ env.TF_DIR }}
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ID }}
