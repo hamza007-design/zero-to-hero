@@ -2,20 +2,24 @@ name: "Terraform CI/CD Pipeline"
 
 on:
   push:
-    branches: [dev]
+    branches:
+      - dev
+
   workflow_dispatch:
     inputs:
       action:
-        description: 'Terraform Action (apply/destroy)'
+        description: 'Terraform Action (apply or destroy)'
         required: true
         type: choice
-        options: [apply, destroy]
+        options:
+          - apply
+          - destroy
 
 env:
-  TF_DIR: ./Terraform  # Define Terraform directory path
+  TF_DIR: ./Terraform  # Terraform directory path
 
 jobs:
-  terraform_validate:
+  terraform_validate_and_plan:
     name: "Validate & Plan"
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
@@ -49,11 +53,10 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ID }}
 
   terraform_apply:
-    name: "Apply Changes"
-    if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'apply' }}
+    name: "Apply Infrastructure"
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'apply'
     runs-on: ubuntu-latest
     environment: production
-    needs: terraform_validate
 
     steps:
       - name: Checkout code
@@ -80,7 +83,7 @@ jobs:
 
   terraform_destroy:
     name: "Destroy Infrastructure"
-    if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'destroy' }}
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'destroy'
     runs-on: ubuntu-latest
     environment: production
 
