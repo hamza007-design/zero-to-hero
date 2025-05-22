@@ -1,6 +1,7 @@
 name: Terraform CI/CD Pipeline
 
 on:
+  branches: [dev]
   workflow_dispatch:
     inputs:
       action:
