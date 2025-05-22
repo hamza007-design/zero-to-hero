@@ -1,24 +1,16 @@
 name: Terraform CI/CD Pipeline
 
 on:
-  branches: [dev]
-  workflow_dispatch:
-    inputs:
-      action:
-        description: 'Choose Terraform Action'
-        required: true
-        default: apply
-        type: choice
-        options:
-          - apply
-          - destroy
+  push:
+    branches:
+      - dev
 
 env:
   TF_DIR: ./Terraform
 
 jobs:
   terraform:
-    name: Terraform Apply or Destroy
+    name: Terraform Init, Validate, Plan, Apply
     runs-on: ubuntu-latest
 
     steps:
@@ -49,17 +41,8 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ID }}
 
       - name: Terraform Apply
-        if: ${{ github.event.inputs.action == 'apply' }}
         run: terraform apply -auto-approve -var-file="default.tfvars"
         working-directory: ${{ env.TF_DIR }}
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ID }}
-
-      - name: Terraform Destroy
-        if: ${{ github.event.inputs.action == 'destroy' }}
-        run: terraform destroy -auto-approve -var-file="default.tfvars"
-        working-directory: ${{ env.TF_DIR }}
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ID }}git 
