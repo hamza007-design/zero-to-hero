@@ -2,26 +2,31 @@ name: "Terraform CI/CD Pipeline"
 
 on:
   push:
-    branches: [dev]
-  workflow_dispatch:
+    branches:
+      - dev # Jab 'dev' branch par code push ho ga
+  workflow_dispatch: # Ye manual trigger ke liye hai
     inputs:
       action:
         description: 'Terraform Action (apply/destroy)'
         required: true
         type: choice
-        options: [apply, destroy]
+        options:
+          - apply
+          - destroy
 
 env:
-  TF_DIR: ./Terraform
-  TF_VERSION: 1.5.7
+  TF_DIR: ./Terraform # Terraform files ka directory
+  TF_VERSION: 1.5.7 # Terraform ka version
 
 jobs:
 
   validate_plan:
+    # Ye job sirf 'push' event par chalegi.
+    # Manual workflow_dispatch par ye skip ho jayegi, jo ke expected hai.
     if: github.event_name == 'push'
     name: "Validate & Plan"
     runs-on: ubuntu-latest
-    environment: production
+    environment: production # Aap ka environment
 
     steps:
       - name: Checkout code
@@ -51,10 +56,11 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ID }}
 
   apply:
-    name: "Apply Infrastructure"
+    # Ye job tab chalegi jab workflow_dispatch event ho aur 'action' input 'apply' ho.
     if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'apply' }}
+    name: "Apply Infrastructure"
     runs-on: ubuntu-latest
-    environment: production
+    environment: production # Aap ka environment
 
     steps:
       - name: Checkout code
@@ -80,10 +86,11 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ID }}
 
   destroy:
-    name: "Destroy Infrastructure"
+    # Ye job tab chalegi jab workflow_dispatch event ho aur 'action' input 'destroy' ho.
     if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'destroy' }}
+    name: "Destroy Infrastructure"
     runs-on: ubuntu-latest
-    environment: production
+    environment: production # Aap ka environment
 
     steps:
       - name: Checkout code
