@@ -26,16 +26,16 @@ jobs:
         run: echo "Selected action is: ${{ github.event.inputs.action }}"
 
   terraform_apply:
-    name: "Apply Infrastructure"
     if: ${{ github.event.inputs.action == 'apply' }}
+    name: "Apply Infrastructure"
     runs-on: ubuntu-latest
     steps:
       - name: Apply Step
         run: echo "Running Terraform APPLY"
 
   terraform_destroy:
-    name: "Destroy Infrastructure"
     if: ${{ github.event.inputs.action == 'destroy' }}
+    name: "Destroy Infrastructure"
     runs-on: ubuntu-latest
     steps:
       - name: Destroy Step
