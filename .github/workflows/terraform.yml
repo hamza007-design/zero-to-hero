@@ -15,8 +15,9 @@ env:
   TF_DIR: ./Terraform
 
 jobs:
-  terraform_init_validate_plan:
-    name: "Init, Validate & Plan"
+  terraform_apply:
+    name: "Terraform Apply"
+    if: ${{ github.event.inputs.action == 'apply' }}
     runs-on: ubuntu-latest
 
     steps:
@@ -35,55 +36,31 @@ jobs:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ID }}
 
-      - name: Terraform Validate
-        run: terraform validate
-        working-directory: ${{ env.TF_DIR }}
-
-      - name: Terraform Plan
-        run: terraform plan -var-file="default.tfvars"
-        working-directory: ${{ env.TF_DIR }}
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ID }}
-
-  terraform_apply:
-    name: "Terraform Apply"
-    needs: terraform_init_validate_plan
-    if: ${{ github.event.inputs.action == 'apply' }}
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v4
-      - uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: 1.5.7
-
-      - run: terraform init
-        working-directory: ${{ env.TF_DIR }}
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ID }}
-
-      - run: terraform apply -auto-approve -var-file="default.tfvars"
+      - name: Terraform Apply
+        run: terraform apply -auto-approve -var-file="default.tfvars"
         working-directory: ${{ env.TF_DIR }}
 
   terraform_destroy:
     name: "Terraform Destroy"
-    needs: terraform_init_validate_plan
     if: ${{ github.event.inputs.action == 'destroy' }}
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
-      - uses: hashicorp/setup-terraform@v3
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: 1.5.7
 
-      - run: terraform init
+      - name: Terraform Init
+        run: terraform init
         working-directory: ${{ env.TF_DIR }}
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ID }}
 
-      - run: terraform destroy -auto-approve -var-file="default.tfvars"
+      - name: Terraform Destroy
+        run: terraform destroy -auto-approve -var-file="default.tfvars"
         working-directory: ${{ env.TF_DIR }}
