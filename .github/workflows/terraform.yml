@@ -1,31 +1,19 @@
-name: "Terraform CI/CD Pipeline" # Workflow ka naam
+name: "Terraform Plan & Validate" # Workflow ka naam
 
 on:
   push:
     branches:
       - dev # Jab 'dev' branch par code push ho ga, tab yeh workflow trigger hoga
-  workflow_dispatch: # Yeh manual trigger ke liye hai
-    inputs:
-      action:
-        description: 'Terraform Action (apply)' # User ko dikhne wala description
-        required: true # Yeh input zaroori hai
-        type: choice # User ko dropdown se select karna hoga
-        options:
-          - apply # Sirf 'apply' option
 
 env:
   TF_DIR: ./Terraform # Aap ke Terraform files ka directory path
   TF_VERSION: 1.5.7 # Terraform ka version jo use karna hai
 
 jobs:
-
   validate_plan:
-    # Ye job sirf 'push' event par chalegi.
-    # Manual workflow_dispatch par ye skip ho jayegi, jo ke expected behavior hai.
-    if: github.event_name == 'push'
     name: "Validate & Plan" # Job ka naam
     runs-on: ubuntu-latest # Kis operating system par run karna hai
-    environment: production # Kis environment ke liye hai (GitHub environments mein configure kiya ja sakta hai)
+    environment: production # Kis environment ke liye hai
 
     steps:
       - name: Checkout code # Repository code ko runner par checkout karein
@@ -34,12 +22,12 @@ jobs:
       - name: Setup Terraform # Terraform CLI ko setup karein
         uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: ${{ env.TF_VERSION }} # Environment variable se version lein
+          terraform_version: ${{ env.TF_VERSION }}
 
       - name: Terraform Init # Terraform working directory ko initialize karein
         run: terraform init
-        working-directory: ${{ env.TF_DIR }} # Kis directory mein command chalani hai
-        env: # Environment variables for AWS credentials
+        working-directory: ${{ env.TF_DIR }}
+        env: # AWS credentials
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ID }}
 
@@ -48,38 +36,8 @@ jobs:
         working-directory: ${{ env.TF_DIR }}
 
       - name: Terraform Plan # Infrastructure changes ka plan generate karein
-        run: terraform plan -var-file="default.tfvars" # default.tfvars file use karein
+        run: terraform plan -var-file="default.tfvars"
         working-directory: ${{ env.TF_DIR }}
-        env: # Environment variables for AWS credentials
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ID }}
-
-  apply:
-    # Ye job tab chalegi jab workflow_dispatch event ho aur 'action' input 'apply' ho.
-    if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'apply' }}
-    name: "Apply Infrastructure" # Job ka naam
-    runs-on: ubuntu-latest
-    environment: production
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: ${{ env.TF_VERSION }}
-
-      - name: Terraform Init
-        run: terraform init
-        working-directory: ${{ env.TF_DIR }}
-        env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ID }}
-
-      - name: Terraform Apply # Infrastructure changes ko apply karein
-        run: terraform apply -auto-approve -var-file="default.tfvars" # -auto-approve se confirmation nahi mangega
-        working-directory: ${{ env.TF_DIR }}
-        env:
+        env: # AWS credentials
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ID }}
