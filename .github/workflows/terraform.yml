@@ -14,13 +14,12 @@ on:
 env:
   TF_DIR: ./Terraform
   TF_VERSION: 1.5.7
-  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY }}
-  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ID }}
 
 jobs:
-  terraform_validate:
-    name: "Validate & Plan"
+
+  validate_plan:
     if: github.event_name == 'push'
+    name: "Validate & Plan"
     runs-on: ubuntu-latest
     environment: production
 
@@ -36,6 +35,9 @@ jobs:
       - name: Terraform Init
         run: terraform init
         working-directory: ${{ env.TF_DIR }}
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ID }}
 
       - name: Terraform Validate
         run: terraform validate
@@ -44,17 +46,17 @@ jobs:
       - name: Terraform Plan
         run: terraform plan -var-file="default.tfvars"
         working-directory: ${{ env.TF_DIR }}
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ID }}
 
-  terraform_apply:
+  apply:
     name: "Apply Infrastructure"
-    if: github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'apply'
+    if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'apply' }}
     runs-on: ubuntu-latest
     environment: production
 
     steps:
-      - name: Show Input Value (Debug)
-        run: echo "Action: ${{ github.event.inputs.action }}"
-
       - name: Checkout code
         uses: actions/checkout@v4
 
@@ -66,21 +68,24 @@ jobs:
       - name: Terraform Init
         run: terraform init
         working-directory: ${{ env.TF_DIR }}
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ID }}
 
       - name: Terraform Apply
         run: terraform apply -auto-approve -var-file="default.tfvars"
         working-directory: ${{ env.TF_DIR }}
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ID }}
 
-  terraform_destroy:
+  destroy:
     name: "Destroy Infrastructure"
-    if: github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'destroy'
+    if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'destroy' }}
     runs-on: ubuntu-latest
     environment: production
 
     steps:
-      - name: Show Input Value (Debug)
-        run: echo "Action: ${{ github.event.inputs.action }}"
-
       - name: Checkout code
         uses: actions/checkout@v4
 
@@ -92,7 +97,13 @@ jobs:
       - name: Terraform Init
         run: terraform init
         working-directory: ${{ env.TF_DIR }}
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ID }}
 
       - name: Terraform Destroy
         run: terraform destroy -auto-approve -var-file="default.tfvars"
         working-directory: ${{ env.TF_DIR }}
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ID }}
