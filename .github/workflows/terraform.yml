@@ -1,43 +1,89 @@
-name: "Terraform Plan & Validate" # Workflow ka naam
+name: "Terraform CI/CD Pipeline"
 
 on:
-  push:
-    branches:
-      - dev # Jab 'dev' branch par code push ho ga, tab yeh workflow trigger hoga
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'Choose Terraform action'
+        required: true
+        type: choice
+        options:
+          - apply
+          - destroy
 
 env:
-  TF_DIR: ./Terraform # Aap ke Terraform files ka directory path
-  TF_VERSION: 1.5.7 # Terraform ka version jo use karna hai
+  TF_DIR: ./Terraform
 
 jobs:
-  validate_plan:
-    name: "Validate & Plan" # Job ka naam
-    runs-on: ubuntu-latest # Kis operating system par run karna hai
-    environment: production # Kis environment ke liye hai
+  terraform_init_validate_plan:
+    name: "Init, Validate & Plan"
+    runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code # Repository code ko runner par checkout karein
+      - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Setup Terraform # Terraform CLI ko setup karein
+      - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
-          terraform_version: ${{ env.TF_VERSION }}
+          terraform_version: 1.5.7
 
-      - name: Terraform Init # Terraform working directory ko initialize karein
+      - name: Terraform Init
         run: terraform init
         working-directory: ${{ env.TF_DIR }}
-        env: # AWS credentials
+        env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ID }}
 
-      - name: Terraform Validate # Terraform configuration files ko validate karein
+      - name: Terraform Validate
         run: terraform validate
         working-directory: ${{ env.TF_DIR }}
 
-      - name: Terraform Plan # Infrastructure changes ka plan generate karein
+      - name: Terraform Plan
         run: terraform plan -var-file="default.tfvars"
         working-directory: ${{ env.TF_DIR }}
-        env: # AWS credentials
+        env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ID }}
+
+  terraform_apply:
+    name: "Terraform Apply"
+    needs: terraform_init_validate_plan
+    if: ${{ github.event.inputs.action == 'apply' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.5.7
+
+      - run: terraform init
+        working-directory: ${{ env.TF_DIR }}
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ID }}
+
+      - run: terraform apply -auto-approve -var-file="default.tfvars"
+        working-directory: ${{ env.TF_DIR }}
+
+  terraform_destroy:
+    name: "Terraform Destroy"
+    needs: terraform_init_validate_plan
+    if: ${{ github.event.inputs.action == 'destroy' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.5.7
+
+      - run: terraform init
+        working-directory: ${{ env.TF_DIR }}
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ID }}
+
+      - run: terraform destroy -auto-approve -var-file="default.tfvars"
+        working-directory: ${{ env.TF_DIR }}
