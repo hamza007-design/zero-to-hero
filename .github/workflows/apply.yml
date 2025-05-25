@@ -1,0 +1,37 @@
+name: "Terraform Manual Apply" # Workflow ka naam
+
+on:
+  workflow_dispatch: # Yeh workflow sirf manually run hoga
+
+env:
+  TF_DIR: ./Terraform # Aap ke Terraform files ka directory path
+  TF_VERSION: 1.5.7 # Terraform ka version jo use karna hai
+
+jobs:
+  apply:
+    name: "Apply Infrastructure" # Job ka naam
+    runs-on: ubuntu-latest # Kis operating system par run karna hai
+    environment: production # Kis environment ke liye hai
+
+    steps:
+      - name: Checkout code # Repository code ko runner par checkout karein
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform # Terraform CLI ko setup karein
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+
+      - name: Terraform Init # Terraform working directory ko initialize karein
+        run: terraform init
+        working-directory: ${{ env.TF_DIR }}
+        env: # AWS credentials
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ID }}
+
+      - name: Terraform Apply # Infrastructure changes ko apply karein
+        run: terraform apply -auto-approve -var-file="default.tfvars"
+        working-directory: ${{ env.TF_DIR }}
+        env: # AWS credentials
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ID }}
