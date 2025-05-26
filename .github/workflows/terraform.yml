@@ -1,18 +1,15 @@
 name: "Terraform CI/CD Pipeline"
 
 on:
-  push:
-    branches:
-      - dev  # Your original working branch
   workflow_dispatch:
     inputs:
       action:
-        description: 'Terraform Action to Perform (apply or destroy)?'
-        type: choice
+        description: 'Terraform action to perform'
         required: true
+        type: choice
         options:
-          - Terraform_apply_command
-          - Terraform_destroy_command
+          - apply
+          - destroy
 
 env:
   TF_DIR: ./Terraform
@@ -23,11 +20,14 @@ env:
 jobs:
   terraform_apply:
     name: "Terraform Apply"
-    if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'Terraform_apply_command' }}
+    if: ${{ github.event.inputs.action == 'apply' }}
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Code
+      - name: 🧪 Debug Input
+        run: echo "🎯 Action: ${{ github.event.inputs.action }}"
+
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Setup Terraform
@@ -35,31 +35,24 @@ jobs:
         with:
           terraform_version: ${{ env.TF_VERSION }}
 
-      - name: Terraform Init
+      - name: Init
         run: terraform init
         working-directory: ${{ env.TF_DIR }}
-        env:
-          AWS_ACCESS_KEY_ID: ${{ env.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ env.AWS_SECRET_ACCESS_KEY }}
 
-      - name: Terraform Validate
-        run: terraform validate
-        working-directory: ${{ env.TF_DIR }}
-
-      - name: Terraform Apply
+      - name: Apply
         run: terraform apply -auto-approve -var-file="default.tfvars"
         working-directory: ${{ env.TF_DIR }}
-        env:
-          AWS_ACCESS_KEY_ID: ${{ env.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ env.AWS_SECRET_ACCESS_KEY }}
 
   terraform_destroy:
     name: "Terraform Destroy"
-    if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'Terraform_destroy_command' }}
+    if: ${{ github.event.inputs.action == 'destroy' }}
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Code
+      - name: 🧪 Debug Input
+        run: echo "🎯 Action: ${{ github.event.inputs.action }}"
+
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Setup Terraform
@@ -67,16 +60,10 @@ jobs:
         with:
           terraform_version: ${{ env.TF_VERSION }}
 
-      - name: Terraform Init
+      - name: Init
         run: terraform init
         working-directory: ${{ env.TF_DIR }}
-        env:
-          AWS_ACCESS_KEY_ID: ${{ env.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ env.AWS_SECRET_ACCESS_KEY }}
 
-      - name: Terraform Destroy
+      - name: Destroy
         run: terraform destroy -auto-approve -var-file="default.tfvars"
         working-directory: ${{ env.TF_DIR }}
-        env:
-          AWS_ACCESS_KEY_ID: ${{ env.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ env.AWS_SECRET_ACCESS_KEY }}
