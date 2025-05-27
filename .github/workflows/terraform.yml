@@ -46,7 +46,7 @@ jobs:
             terraform plan -var-file="default.tfvars"
           elif [ "${{ github.event.inputs.action }}" == "destroy" ]; then
             terraform plan -destroy -var-file="default.tfvars"
-          if
+          fi
         working-directory: ${{ env.TF_DIR }}
 
   terraform_apply:
