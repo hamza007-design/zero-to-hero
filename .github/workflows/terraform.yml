@@ -12,7 +12,7 @@ on:
           - destroy
 
 env:
-  TF_DIR: ./Terraform
+  TF_DIR: Terraform
   AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY }}
   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ID }}
 
