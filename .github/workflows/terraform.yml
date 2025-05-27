@@ -17,7 +17,7 @@ env:
 jobs:
   terraform_apply:
     name: "Terraform Apply"
-    if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'apply' }}
+          ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'apply' }}
     runs-on: ubuntu-latest
 
     steps:
@@ -42,7 +42,7 @@ jobs:
 
   terraform_destroy:
     name: "Terraform Destroy"
-    if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'destroy' }}
+        ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.action == 'destroy' }}
     runs-on: ubuntu-latest
 
     steps:
