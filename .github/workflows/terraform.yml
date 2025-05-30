@@ -1,4 +1,4 @@
-name: "Terraform "
+name: "Terraform Pipeline"
 
 on:
   push:
@@ -42,13 +42,19 @@ jobs:
         run: terraform validate
         working-directory: ${{ env.TF_DIR }}
 
-    
+      - name: Terraform Plan (Apply or Destroy)
+        run: |
+          if [ "${{ env.ACTION }}" = "apply" ]; then
+            terraform plan -out=tfplan -var-file="default.tfvars"
+          elif [ "${{ env.ACTION }}" = "destroy" ]; then
+            terraform plan -destroy -out=tfplan -var-file="default.tfvars"
+          fi
+        working-directory: ${{ env.TF_DIR }}
 
-terraform_apply:
+  terraform_apply:
     name: "Terraform Apply"
     needs: terraform_validate
     runs-on: ubuntu-latest
-    
 
     steps:
       - name: Checkout Code
@@ -71,7 +77,6 @@ terraform_apply:
     name: "Terraform Destroy"
     needs: terraform_validate
     runs-on: ubuntu-latest
-    
 
     steps:
       - name: Checkout Code
