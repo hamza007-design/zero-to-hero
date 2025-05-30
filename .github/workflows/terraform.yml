@@ -1,4 +1,4 @@
-name: "Terraform CI/CD Pipeline"
+name: "Terraform "
 
 on:
   push:
@@ -16,8 +16,10 @@ on:
 
 env:
   TF_DIR: ./Terraform
+  ACTION: ${{ github.event.inputs.action || 'apply' }}
   AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY }}
   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ID }}
+
 jobs:
   terraform_validate:
     name: "Validate & Plan"
@@ -40,20 +42,20 @@ jobs:
         run: terraform validate
         working-directory: ${{ env.TF_DIR }}
 
-      - name: Conditional Plan
-        run: |
-          if [ "${{ github.event.inputs.action }}" == "apply" ]; then
-            terraform plan -out=tfplan -var-file="default.tfvars"
-          elif [ "${{ github.event.inputs.action }}" == "destroy" ]; then
-            terraform plan -destroy -out=tfplan -var-file="default.tfvars"
-          fi
-        working-directory: ${{ env.TF_DIR }}
+      # - name: Conditional Plan
+      #   run: |
+      #     if [ "${{ env.ACTION }}" == "apply" ]; then
+      #       terraform plan -out=tfplan -var-file="default.tfvars"
+      #     elif [ "${{ env.ACTION }}" == "destroy" ]; then
+      #       terraform plan -destroy -out=tfplan -var-file="default.tfvars"
+      #     fi
+      #   working-directory: ${{ env.TF_DIR }}
 
   terraform_apply:
     name: "Terraform Apply"
     needs: terraform_validate
     runs-on: ubuntu-latest
-    if: ${{ github.event.inputs.action == 'apply' }}
+    # if: env.ACTION == 'apply'
 
     steps:
       - name: Checkout Code
@@ -76,7 +78,7 @@ jobs:
     name: "Terraform Destroy"
     needs: terraform_validate
     runs-on: ubuntu-latest
-    if: ${{ github.event.inputs.action == 'destroy' }}
+    # if: env.ACTION == 'destroy'
 
     steps:
       - name: Checkout Code
