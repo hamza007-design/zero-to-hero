@@ -71,5 +71,10 @@ resource "aws_instance" "my_ec2" {
   tags = {
     Name = "DevOps-EC2"
   }
+
+
+  provisioner "local-exec" {
+    command = "ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook -i inventory.ini Playbook.yml"
+  }
 }
 

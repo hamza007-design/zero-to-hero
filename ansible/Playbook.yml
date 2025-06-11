@@ -1,0 +1,57 @@
+---
+- name: Configure EC2 with Docker and Docker Compose
+  hosts: ec2_instances
+  become: true
+
+  tasks:
+    - name: Install required packages
+      apt:
+        name:
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - software-properties-common
+        state: present
+        update_cache: yes
+
+    - name: Add Docker GPG key
+      shell: curl -fsSL https://download.docker.com/linux/ubuntu/gpg | apt-key add -
+
+    - name: Add Docker repo
+      apt_repository:
+        repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu focal stable
+        state: present
+
+    - name: Install Docker
+      apt:
+        name: docker-ce
+        state: latest
+        update_cache: yes
+
+    - name: Install Docker Compose
+      get_url:
+        url: https://github.com/docker/compose/releases/download/v2.22.0/docker-compose-linux-x86_64
+        dest: /usr/local/bin/docker-compose
+        mode: '0755'
+
+    - name: Create app directory
+      file:
+        path: /home/ubuntu/app
+        state: directory
+        owner: ubuntu
+        group: ubuntu
+        mode: '0755'
+
+    - name: Copy docker-compose.yml
+      copy:
+        src: ../docker/docker-compose.yml
+        dest: /home/ubuntu/app/docker-compose.yml
+        owner: ubuntu
+        mode: '0644'
+
+    - name: Start containers with Docker Compose
+      shell: docker-compose up -d
+      args:
+        chdir: /home/ubuntu/app
+
+
